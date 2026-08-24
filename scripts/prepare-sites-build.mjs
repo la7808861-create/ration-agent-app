@@ -8,7 +8,17 @@ await writeFile('dist/server/index.js', `
 export default {
   async fetch(request, env) {
     if (env.ASSETS) {
-      return env.ASSETS.fetch(request);
+      const url = new URL(request.url);
+      let response = await env.ASSETS.fetch(request);
+      if (response.status !== 404) return response;
+
+      if (url.pathname === '/' || !url.pathname.includes('.')) {
+        const indexUrl = new URL('/index.html', url.origin);
+        response = await env.ASSETS.fetch(new Request(indexUrl, request));
+        if (response.status !== 404) return response;
+      }
+
+      return response;
     }
 
     const url = new URL(request.url);

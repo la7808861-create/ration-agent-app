@@ -1,0 +1,77 @@
+:root {
+  font-family: Tahoma, Arial, sans-serif;
+  color: #25312f;
+  background: #f6f3ec;
+  color-scheme: light;
+}
+.dark {
+  color: #edf4f1;
+  background: #16211f;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; direction: rtl; background: inherit; }
+button, input, select { font: inherit; }
+button {
+  border: 1px solid #d7ddd8;
+  background: #fff;
+  color: inherit;
+  min-height: 44px;
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+input, select {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid #ccd5d0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fff;
+  color: #25312f;
+}
+.dark input, .dark select, .dark button, .dark .panel, .dark .item, .dark .stat { background: #21302d; border-color: #3d504b; color: #edf4f1; }
+.app { min-height: 100vh; display: grid; grid-template-columns: 250px 1fr; }
+.nav { background: #22615b; color: white; padding: 18px; display: flex; flex-direction: column; gap: 8px; position: sticky; top: 0; height: 100vh; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px; margin-bottom: 12px; }
+.nav button { background: transparent; color: white; border-color: rgba(255,255,255,.18); justify-content: flex-start; }
+.nav button.active { background: rgba(255,255,255,.18); }
+.main { padding: 20px; }
+.top { display: flex; gap: 14px; align-items: center; margin-bottom: 20px; }
+.search { flex: 1; display: flex; align-items: center; gap: 8px; background: white; border: 1px solid #d7ddd8; border-radius: 8px; padding: 0 12px; }
+.search input { border: 0; background: transparent; }
+.user { white-space: nowrap; color: #56706a; }
+h1, h2, h3 { margin: 0 0 14px; letter-spacing: 0; }
+h2 { font-size: 28px; }
+.login, .loading { min-height: 100vh; display: grid; place-items: center; padding: 20px; background: #f6f3ec; }
+.loginBox { width: min(420px, 100%); background: white; border: 1px solid #d7ddd8; border-radius: 8px; padding: 24px; display: grid; gap: 12px; text-align: center; }
+.primary { background: #22615b; color: white; border-color: #22615b; font-weight: 700; }
+.danger { color: #9d2f2f; border-color: #e3b3b3; }
+.error, .warn { color: #a55f00; display: flex; align-items: center; gap: 8px; }
+.stats { display: grid; grid-template-columns: repeat(6, minmax(130px, 1fr)); gap: 12px; margin-bottom: 18px; }
+.stat, .panel, .item { background: white; border: 1px solid #d7ddd8; border-radius: 8px; padding: 16px; }
+.stat strong { display: block; font-size: 30px; color: #22615b; }
+.stat span { color: #60736f; }
+.grid.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.row { min-height: 42px; border-bottom: 1px solid #edf0ed; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.row:last-child { border-bottom: 0; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; margin-top: 14px; }
+.item p { margin: 8px 0; color: #526864; line-height: 1.7; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.editor { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; background: rgba(34,97,91,.08); padding: 12px; border-radius: 8px; margin-bottom: 14px; }
+progress { width: 100%; height: 14px; accent-color: #d89b42; }
+.file { border: 1px solid #d7ddd8; min-height: 44px; border-radius: 8px; padding: 10px 14px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; }
+.file input { display: none; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+@media (max-width: 860px) {
+  .app { grid-template-columns: 1fr; }
+  .nav { position: static; height: auto; display: grid; grid-template-columns: repeat(2, 1fr); }
+  .brand { grid-column: 1 / -1; }
+  .main { padding: 12px; }
+  .top, .grid.two { grid-template-columns: 1fr; display: grid; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+}

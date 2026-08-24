@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">وكيل التموين</string>
+    <string name="title_activity_main">وكيل التموين</string>
+    <string name="package_name">com.ration.agent.app</string>
+    <string name="custom_url_scheme">com.ration.agent.app</string>
+</resources>

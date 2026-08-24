@@ -8,4 +8,6 @@ ios/App/Pods/
 ios/App/build/
 *.apk
 *.aab
+*.zip
+*.tar.gz
 .DS_Store

@@ -275,15 +275,21 @@ function ReportsPage({ db }: any) {
 function SettingsPage({ db, save, reset, user, onLogout, onHome }: any) {
   const [settings, setSettings] = useState(db.settings);
   const [newUser, setNewUser] = useState({ username: '', name: '', password: '123456', role: 'employee' as Role });
-  const backup = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(db)], { type: 'application/json' })); a.download = 'ration-backup.json'; a.click(); };
+  const backup = (name = 'ration-backup.json') => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(db)], { type: 'application/json' }));
+    a.download = name;
+    a.click();
+  };
   const restore = (file: File) => file.text().then(text => save(() => JSON.parse(text), `${user.name} استرجع نسخة احتياطية`));
   const resetSystem = async () => {
-    const ok = confirm('تأكيد فرمته النظام؟ سيتم مسح كل البيانات وإرجاع النظام فارغًا بدون بيانات افتراضية. ستبقى حسابات الدخول الأساسية فقط.');
+    const ok = confirm('تأكيد فرمته النظام؟ سيتم تنزيل نسخة احتياطية تلقائيًا أولًا، ثم يرجع النظام فارغًا بدون بيانات افتراضية. يمكنك استرجاع البيانات لاحقًا من ملف النسخة الاحتياطية.');
     if (!ok) return;
+    backup(`ration-backup-before-reset-${new Date().toISOString().slice(0, 10)}.json`);
     await reset();
     onLogout();
     onHome();
-    alert('تمت فرمته النظام. يمكنك الدخول بالحساب الافتراضي agent / 123456');
+    alert('تمت فرمته النظام بعد تنزيل نسخة احتياطية. يمكنك الدخول بالحساب الافتراضي agent / 123456');
   };
   const addUser = async () => {
     const passwordHash = await hashPassword(newUser.password);

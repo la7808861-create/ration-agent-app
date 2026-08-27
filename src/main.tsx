@@ -89,6 +89,11 @@ async function createDefaultDb() {
     { id: uid(), username: 'agent', passwordHash: await hashPassword('123456'), role: 'agent', name: 'الوكيل', active: true },
     { id: uid(), username: 'employee', passwordHash: await hashPassword('123456'), role: 'employee', name: 'موظف التوزيع', active: true }
   ];
+  next.families = [];
+  next.items = [];
+  next.meals = [];
+  next.deliveries = [];
+  next.audit = ['تم إنشاء قاعدة بيانات فارغة'];
   return next;
 }
 
@@ -97,7 +102,7 @@ function useDb() {
   useEffect(() => {
     (async () => {
       const saved = await readDbFromDisk();
-      const next = saved ? JSON.parse(saved) as Db : seedDb();
+      const next = saved ? JSON.parse(saved) as Db : await createDefaultDb();
       if (!next.users.length) {
         next.users = [
           { id: uid(), username: 'agent', passwordHash: await hashPassword('123456'), role: 'agent', name: 'الوكيل', active: true },
@@ -273,7 +278,7 @@ function SettingsPage({ db, save, reset, user, onLogout, onHome }: any) {
   const backup = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(db)], { type: 'application/json' })); a.download = 'ration-backup.json'; a.click(); };
   const restore = (file: File) => file.text().then(text => save(() => JSON.parse(text), `${user.name} استرجع نسخة احتياطية`));
   const resetSystem = async () => {
-    const ok = confirm('تأكيد فرمته النظام؟ سيتم مسح بيانات العوائل والمواد والوجبات والتسليمات وإرجاع حسابات الدخول الافتراضية.');
+    const ok = confirm('تأكيد فرمته النظام؟ سيتم مسح كل البيانات وإرجاع النظام فارغًا بدون بيانات افتراضية. ستبقى حسابات الدخول الأساسية فقط.');
     if (!ok) return;
     await reset();
     onLogout();
@@ -288,7 +293,7 @@ function SettingsPage({ db, save, reset, user, onLogout, onHome }: any) {
     }, `${user.name} أضاف مستخدم`);
   };
   return <section><h2>الإعدادات</h2><Editor fields={['agentName:اسم الوكيل','agentNo:رقم الوكيل','area:المنطقة','phone:الهاتف','centerName:اسم المركز','lowStockPercent:نسبة تنبيه المخزون']} form={settings} setForm={setSettings} onSubmit={() => save((d: Db) => { d.settings = { ...settings, lowStockPercent: +settings.lowStockPercent }; return d; }, `${user.name} حفظ الإعدادات`)} />
-  <div className="grid two"><Panel title="إدارة المستخدمين"><Editor fields={['username:اسم المستخدم','name:الاسم','password:كلمة المرور','role:الصلاحية']} form={newUser} setForm={setNewUser} onSubmit={addUser} />{db.users.map((u: User) => <Row key={u.id} a={`${u.name} (${u.username})`} b={u.role}/>)}</Panel><Panel title="النسخ الاحتياطي والمزامنة"><button onClick={backup}><Download size={18}/>نسخة احتياطية</button><label className="file"><Upload size={18}/>استرجاع<input type="file" accept="application/json" onChange={e => e.target.files?.[0] && restore(e.target.files[0])}/></label><label><input type="checkbox" checked={settings.syncEnabled} onChange={e => setSettings({...settings, syncEnabled: e.target.checked})}/> مزامنة سحابية مستقبلية</label>{user.role === 'agent' && <div className="resetBox"><h3>فرمته النظام</h3><p>يمسح كل البيانات الحالية ويرجع النظام إلى البيانات والحسابات الافتراضية.</p><button className="danger" onClick={resetSystem}><Trash2 size={18}/>فرمته النظام</button></div>}</Panel></div></section>;
+  <div className="grid two"><Panel title="إدارة المستخدمين"><Editor fields={['username:اسم المستخدم','name:الاسم','password:كلمة المرور','role:الصلاحية']} form={newUser} setForm={setNewUser} onSubmit={addUser} />{db.users.map((u: User) => <Row key={u.id} a={`${u.name} (${u.username})`} b={u.role}/>)}</Panel><Panel title="النسخ الاحتياطي والمزامنة"><button onClick={backup}><Download size={18}/>نسخة احتياطية</button><label className="file"><Upload size={18}/>استرجاع<input type="file" accept="application/json" onChange={e => e.target.files?.[0] && restore(e.target.files[0])}/></label><label><input type="checkbox" checked={settings.syncEnabled} onChange={e => setSettings({...settings, syncEnabled: e.target.checked})}/> مزامنة سحابية مستقبلية</label>{user.role === 'agent' && <div className="resetBox"><h3>فرمته النظام</h3><p>يمسح كل البيانات الحالية ويرجع النظام فارغًا بدون عوائل أو مواد أو وجبات افتراضية.</p><button className="danger" onClick={resetSystem}><Trash2 size={18}/>فرمته النظام</button></div>}</Panel></div></section>;
 }
 
 createRoot(document.getElementById('root')!).render(<App />);

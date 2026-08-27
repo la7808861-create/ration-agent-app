@@ -83,6 +83,15 @@ function seedDb(): Db {
   };
 }
 
+async function createDefaultDb() {
+  const next = seedDb();
+  next.users = [
+    { id: uid(), username: 'agent', passwordHash: await hashPassword('123456'), role: 'agent', name: 'الوكيل', active: true },
+    { id: uid(), username: 'employee', passwordHash: await hashPassword('123456'), role: 'employee', name: 'موظف التوزيع', active: true }
+  ];
+  return next;
+}
+
 function useDb() {
   const [db, setDb] = useState<Db | null>(null);
   useEffect(() => {
@@ -106,11 +115,17 @@ function useDb() {
     writeDbToDisk(next);
     return next;
   });
-  return { db, save };
+  const reset = async () => {
+    const next = await createDefaultDb();
+    next.audit.unshift(`${new Date().toLocaleString('ar-IQ')} - تم تصفير النظام`);
+    await writeDbToDisk(next);
+    setDb(next);
+  };
+  return { db, save, reset };
 }
 
 function App() {
-  const { db, save } = useDb();
+  const { db, save, reset } = useDb();
   const [user, setUser] = useState<User | null>(null);
   const [view, setView] = useState('home');
   const [query, setQuery] = useState('');
@@ -118,7 +133,7 @@ function App() {
   useEffect(() => { document.documentElement.classList.toggle('dark', dark); }, [dark]);
   if (!db) return <main className="loading">جاري تحميل قاعدة البيانات...</main>;
   if (!user) return <Login db={db} onLogin={setUser} />;
-  const props = { db, save, user, query };
+  const props = { db, save, reset, user, query, onLogout: () => setUser(null), onHome: () => setView('home') };
   return <div className="app">
     <aside className="nav">
       <div className="brand"><Shield /> <span>وكيل التموين</span></div>
@@ -252,11 +267,19 @@ function ReportsPage({ db }: any) {
   return <section><h2>التقارير</h2><div className="stats"><Stat label="العوائل المستلمة" value={report.receivedFamilies.length}/><Stat label="غير المستلمة" value={report.pendingFamilies.length}/><Stat label="الأفراد المستفيدون" value={db.families.reduce((s: number, f: Family) => s + f.membersCount, 0)}/></div><button className="primary" onClick={download}><Download size={18}/>تصدير ومشاركة التقرير</button><Panel title="حسب الموظف">{db.users.map((u: User) => <Row key={u.id} a={u.name} b={db.deliveries.filter((d: Delivery) => d.employeeId === u.id).length}/>)}</Panel></section>;
 }
 
-function SettingsPage({ db, save, user }: any) {
+function SettingsPage({ db, save, reset, user, onLogout, onHome }: any) {
   const [settings, setSettings] = useState(db.settings);
   const [newUser, setNewUser] = useState({ username: '', name: '', password: '123456', role: 'employee' as Role });
   const backup = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(db)], { type: 'application/json' })); a.download = 'ration-backup.json'; a.click(); };
   const restore = (file: File) => file.text().then(text => save(() => JSON.parse(text), `${user.name} استرجع نسخة احتياطية`));
+  const resetSystem = async () => {
+    const ok = confirm('تأكيد فرمته النظام؟ سيتم مسح بيانات العوائل والمواد والوجبات والتسليمات وإرجاع حسابات الدخول الافتراضية.');
+    if (!ok) return;
+    await reset();
+    onLogout();
+    onHome();
+    alert('تمت فرمته النظام. يمكنك الدخول بالحساب الافتراضي agent / 123456');
+  };
   const addUser = async () => {
     const passwordHash = await hashPassword(newUser.password);
     save((d: Db) => {
@@ -265,13 +288,13 @@ function SettingsPage({ db, save, user }: any) {
     }, `${user.name} أضاف مستخدم`);
   };
   return <section><h2>الإعدادات</h2><Editor fields={['agentName:اسم الوكيل','agentNo:رقم الوكيل','area:المنطقة','phone:الهاتف','centerName:اسم المركز','lowStockPercent:نسبة تنبيه المخزون']} form={settings} setForm={setSettings} onSubmit={() => save((d: Db) => { d.settings = { ...settings, lowStockPercent: +settings.lowStockPercent }; return d; }, `${user.name} حفظ الإعدادات`)} />
-  <div className="grid two"><Panel title="إدارة المستخدمين"><Editor fields={['username:اسم المستخدم','name:الاسم','password:كلمة المرور','role:الصلاحية']} form={newUser} setForm={setNewUser} onSubmit={addUser} />{db.users.map((u: User) => <Row key={u.id} a={`${u.name} (${u.username})`} b={u.role}/>)}</Panel><Panel title="النسخ الاحتياطي والمزامنة"><button onClick={backup}><Download size={18}/>نسخة احتياطية</button><label className="file"><Upload size={18}/>استرجاع<input type="file" accept="application/json" onChange={e => e.target.files?.[0] && restore(e.target.files[0])}/></label><label><input type="checkbox" checked={settings.syncEnabled} onChange={e => setSettings({...settings, syncEnabled: e.target.checked})}/> مزامنة سحابية مستقبلية</label></Panel></div></section>;
+  <div className="grid two"><Panel title="إدارة المستخدمين"><Editor fields={['username:اسم المستخدم','name:الاسم','password:كلمة المرور','role:الصلاحية']} form={newUser} setForm={setNewUser} onSubmit={addUser} />{db.users.map((u: User) => <Row key={u.id} a={`${u.name} (${u.username})`} b={u.role}/>)}</Panel><Panel title="النسخ الاحتياطي والمزامنة"><button onClick={backup}><Download size={18}/>نسخة احتياطية</button><label className="file"><Upload size={18}/>استرجاع<input type="file" accept="application/json" onChange={e => e.target.files?.[0] && restore(e.target.files[0])}/></label><label><input type="checkbox" checked={settings.syncEnabled} onChange={e => setSettings({...settings, syncEnabled: e.target.checked})}/> مزامنة سحابية مستقبلية</label>{user.role === 'agent' && <div className="resetBox"><h3>فرمته النظام</h3><p>يمسح كل البيانات الحالية ويرجع النظام إلى البيانات والحسابات الافتراضية.</p><button className="danger" onClick={resetSystem}><Trash2 size={18}/>فرمته النظام</button></div>}</Panel></div></section>;
 }
 
 createRoot(document.getElementById('root')!).render(<App />);
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/public-sw.js');
+    navigator.serviceWorker.register('./public-sw.js');
   });
 }
